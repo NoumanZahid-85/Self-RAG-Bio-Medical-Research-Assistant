@@ -1,0 +1,52 @@
+# =============================================================================
+# Self-RAG Biomedical Research Assistant — Python Dependencies
+# =============================================================================
+# Phase 1: Retrieval Corpus Foundation
+# ---------------------------------------------------------------------------
+datasets>=4.4.1          # Hugging Face datasets (PubMedQA loader)
+psycopg2-binary>=2.9.10  # PostgreSQL driver (pgvector integration)
+pgvector>=0.4.1          # pgvector Python helper (vector type, indexing)
+
+# Phase 2: Core Self-RAG LangGraph Pipeline
+# ---------------------------------------------------------------------------
+langgraph>=0.5.4         # State machine / graph orchestration
+langchain-core>=0.3.49   # Core abstractions LangGraph builds on
+langchain-groq>=0.2.5    # Groq chat models (OpenAI-compatible SDK wrapper)
+openai>=1.93.3           # Base SDK — Groq uses OpenAI-compatible API
+pydantic>=2.10.6         # Request/response validation (FastAPI + LLM structured output)
+
+# Phase 3: Evaluation Harness
+# ---------------------------------------------------------------------------
+ragas>=0.3.7             # RAGAS metrics: faithfulness, relevancy, precision, recall
+
+# Phase 4: FastAPI Backend
+# ---------------------------------------------------------------------------
+fastapi>=0.115.12        # Async REST API framework
+uvicorn[standard]>=0.34.0  # ASGI server
+httpx>=0.28.1            # Async HTTP client (health checks, external calls)
+python-dotenv>=1.1.0     # .env file loader
+
+# Phase 5: Containerization — no new Python deps (Dockerfile-only)
+
+# Phase 6: React Frontend — no Python deps (separate frontend/)
+
+# Phase 7: Observability
+# ---------------------------------------------------------------------------
+langsmith>=0.3.15         # LangSmith LLM tracing / observability platform
+
+# Phase 8: CI/CD
+# ---------------------------------------------------------------------------
+ruff>=0.11.6             # Linter + formatter (replaces flake8, isort, black)
+pytest>=8.3.5            # Test runner
+pytest-asyncio>=0.25.3   # Async test support
+
+# Phase 9: Cloud Deployment — no new deps
+
+# Phase 10: Load Testing
+# ---------------------------------------------------------------------------
+locust>=2.32.5           # Load testing framework (100+ concurrent simulation)
+
+# Development utilities
+# ---------------------------------------------------------------------------
+ipython>=8.31.0          # Better REPL for debugging
+tqdm>=4.67.1             # Progress bars (ingestion scripts)

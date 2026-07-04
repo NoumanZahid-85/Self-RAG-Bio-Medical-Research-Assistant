@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.venv
+venv
+.pytest_cache
+.coverage
+htmlcov
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment (never copy secrets into the image)
+.env
+.env.example
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Test/build artifacts
+dist
+build

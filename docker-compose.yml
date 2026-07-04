@@ -1,0 +1,42 @@
+# Why pgvector/pgvector image: comes with the extension pre-installed, no
+# manual CREATE EXTENSION race condition on first boot.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: selfrag-db
+    environment:
+      POSTGRES_DB: selfrag
+      POSTGRES_USER: selfrag
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-selfrag}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/app/retrieval/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U selfrag -d selfrag"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: selfrag-backend
+    env_file:
+      - .env
+    environment:
+      # Override DATABASE_URL inside the container to use the 'db' service
+      # hostname instead of 'localhost' (which only works from the host).
+      DATABASE_URL: postgresql://selfrag:selfrag@db:5432/selfrag
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

@@ -1,0 +1,52 @@
+# Environment variables (contains secrets)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+pip-wheel-metadata/
+
+# Docker
+pgdata/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Langfuse (if self-hosting)
+langfuse-data/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Ruff linter cache
+.ruff_cache/
+
+# Benchmark artifacts
+.benchmarks/
+
+# Agent/codebase memory artifacts
+.codebase-memory/
+
+# Eval results (generated)
+eval_results_*.json
+
+# Generated schemas / code
+*.egg
