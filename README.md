@@ -198,7 +198,7 @@ Self-RAG/
 ├── .github/workflows/
 │   ├── ci.yml                      # Lint → Test → RAGAS quality gate
 │   └── deploy.yml                  # Build and push Docker image to GHCR
-└── .env.example                    # Environment variables template
+├── .env                           # Environment variables (create from template below)
 ```
 
 ---
@@ -220,19 +220,8 @@ Self-RAG/
 git clone https://github.com/NoumanZahid-85/Self-RAG-Bio-Medical-Research-Assistant.git
 cd Self-RAG-Bio-Medical-Research-Assistant
 
-# Copy the template and fill in your API keys
-cp .env.example .env
+# Create `.env` with your API keys (see the Environment Variables section below)
 ```
-
-Edit `.env` and add your keys:
-
-```env
-GROQ_API_KEY=gsk_your_key_here
-JINA_API_KEY=jina_your_key_here
-
-# Optional (enables LangSmith tracing dashboard)
-LANGSMITH_TRACING=true
-LANGSMITH_API_KEY=lsv2_your_key_here
 ```
 
 ### 2. Start the containers
