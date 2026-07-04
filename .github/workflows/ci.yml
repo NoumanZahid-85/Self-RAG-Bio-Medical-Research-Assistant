@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint with ruff
+        run: ruff check backend/
+
+      - name: Run unit tests
+        run: pytest backend/tests/ -v --tb=short
+
+  quality-gate:
+    needs: lint-and-test
+    if: github.repository != ''
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: selfrag
+          POSTGRES_USER: selfrag
+          POSTGRES_PASSWORD: selfrag
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Apply database schema
+        env:
+          DATABASE_URL: postgresql://selfrag:selfrag@localhost:5432/selfrag
+        run: python -c "
+          from backend.app.retrieval.db import run_schema;
+          run_schema();
+          print('Schema applied successfully')
+        "
+
+      - name: Check API keys available
+        id: check-keys
+        run: |
+          if [ -n "$GROQ_KEY" ] && [ -n "$JINA_KEY" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping quality gate — set GROQ_API_KEY and JINA_API_KEY in repo secrets"
+          fi
+        env:
+          GROQ_KEY: ${{ secrets.GROQ_API_KEY }}
+          JINA_KEY: ${{ secrets.JINA_API_KEY }}
+
+      - name: Ingest small evaluation corpus
+        if: steps.check-keys.outputs.available == 'true'
+        env:
+          DATABASE_URL: postgresql://selfrag:selfrag@localhost:5432/selfrag
+          JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
+          MAX_DOCS: 200
+          API_DELAY_SECONDS: "0.5"
+        run: python -m backend.app.retrieval.ingest
+
+      - name: RAGAS quality gate
+        if: steps.check-keys.outputs.available == 'true'
+        env:
+          DATABASE_URL: postgresql://selfrag:selfrag@localhost:5432/selfrag
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
+        run: python -m backend.app.eval.run_eval --sample 2 --output eval_ci_report.json
+
+      - name: Summarize quality gate
+        if: steps.check-keys.outputs.available == 'true' && always()
+        run: |
+          if [ -f eval_ci_report.json ]; then
+            echo "## Quality Gate Results" >> $GITHUB_STEP_SUMMARY
+            python -c "
+              import json
+              with open('eval_ci_report.json') as f:
+                data = json.load(f)
+              agg = data['aggregate']
+              thresh = data['thresholds']
+              print(f'| Metric | Score | Threshold | Status |')
+              print(f'|--------|-------|-----------|--------|')
+              for metric, score in agg.items():
+                if metric == 'abstain_rate': continue
+                t = thresh.get(metric.replace('avg_', ''), 0)
+                status = '✅' if score >= t else '❌'
+                print(f'| {metric} | {score:.4f} | {t} | {status} |')
+              passed = all(agg.get(f'avg_{k}', 0) >= v for k, v in thresh.items() if k != 'abstain_rate')
+              print(f'\n**Overall: {\"PASS\" if passed else \"FAIL\"}**')
+            " >> $GITHUB_STEP_SUMMARY
+          else:
+            echo "No eval report found — quality gate was skipped"
+          fi
